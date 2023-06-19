@@ -1,27 +1,44 @@
 from flask import Flask, jsonify, request
 from flask_restful import Api, Resource
 
+from pymongo import MongoClient
 
 app = Flask(__name__)
 api = Api(app)
 
+client = MongoClient("mongodb://db:27017")
+db = client.aNewDB
+UserNum = db["UserNum"]
 
-def checkPostedData(postedData, functionName):  #functionName=url, postData= variable("x,y)
+UserNum.insertOne({
+    'num_of_users':0
+})
+
+class Visit(Resource):
+    def get(self):
+        prev_num = UserNum.find({})[0]['num_of_users']
+        new_num = prev_num + 1
+        UserNum.update({}, {"$set":{"num_of_users":new_num}})
+        return str("Hello user " + str(new_num))
+
+
+def checkPostedData(postedData, functionName):
     if (functionName == "add" or functionName == "subtract" or functionName == "multiply"):
         if "x" not in postedData or "y" not in postedData:
             return 301 #Missing parameter
         else:
-            return 200 #OK
+            return 200
     elif (functionName == "division"):
         if "x" not in postedData or "y" not in postedData:
             return 301
         elif int(postedData["y"])==0:
-            return 302 #error not divided in 0
+            return 302
         else:
             return 200
 
 class Add(Resource):
     def post(self):
+        #If I am here, then the resouce Add was requested using the method POST
 
         #Step 1: Get posted data:
         postedData = request.get_json()
@@ -35,6 +52,7 @@ class Add(Resource):
             }
             return jsonify(retJson)
 
+        #If i am here, then status_code == 200
         x = postedData["x"]
         y = postedData["y"]
         x = int(x)
@@ -50,6 +68,7 @@ class Add(Resource):
 
 class Subtract(Resource):
     def post(self):
+        #If I am here, then the resouce Subtract was requested using the method POST
 
         #Step 1: Get posted data:
         postedData = request.get_json()
@@ -65,11 +84,13 @@ class Subtract(Resource):
             }
             return jsonify(retJson)
 
+        #If i am here, then status_code == 200
         x = postedData["x"]
         y = postedData["y"]
         x = int(x)
         y = int(y)
 
+        #Step 2: Subtract the posted data
         ret = x-y
         retMap = {
             'Message': ret,
@@ -80,6 +101,7 @@ class Subtract(Resource):
 
 class Multiply(Resource):
     def post(self):
+        #If I am here, then the resouce Multiply was requested using the method POST
 
         #Step 1: Get posted data:
         postedData = request.get_json()
@@ -95,6 +117,7 @@ class Multiply(Resource):
             }
             return jsonify(retJson)
 
+        #If i am here, then status_code == 200
         x = postedData["x"]
         y = postedData["y"]
         x = int(x)
@@ -110,6 +133,7 @@ class Multiply(Resource):
 
 class Divide(Resource):
     def post(self):
+        #If I am here, then the resouce Divide was requested using the method POST
 
         #Step 1: Get posted data:
         postedData = request.get_json()
@@ -125,6 +149,7 @@ class Divide(Resource):
             }
             return jsonify(retJson)
 
+        #If i am here, then status_code == 200
         x = postedData["x"]
         y = postedData["y"]
         x = int(x)
@@ -144,6 +169,7 @@ api.add_resource(Add, "/add")
 api.add_resource(Subtract, "/subtract")
 api.add_resource(Multiply, "/multiply")
 api.add_resource(Divide, "/division")
+api.add_resource(Visit, "/hello")
 
 @app.route('/')
 def hello_world():
@@ -151,4 +177,4 @@ def hello_world():
 
 
 if __name__=="__main__":
-    app.run(host="0.0.0.0")
+    app.run(host='0.0.0.0')
